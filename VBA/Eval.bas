@@ -1,4 +1,4 @@
-Attribute VB_Name = "Module3"
+Attribute VB_Name = "MEval"
 '
 ' Purpose   : Turns a string formula into a “real” formula and evaluates it.
 ' Comment   : [Rng] Formula in string format.

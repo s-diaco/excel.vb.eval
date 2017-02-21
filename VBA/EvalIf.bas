@@ -1,4 +1,4 @@
-Attribute VB_Name = "Module1"
+Attribute VB_Name = "MEvalIf"
 ' Turns a string formula into a “real” formula and evaluates it if the condition is met.
 Function EvalIf(Rng As Range, Cond As Range, Crit As Range)
     Dim i As Integer

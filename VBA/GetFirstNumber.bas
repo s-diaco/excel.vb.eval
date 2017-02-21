@@ -1,4 +1,4 @@
-Attribute VB_Name = "Module2"
+Attribute VB_Name = "MGetFirstNumber"
 ' Gets the first number in a string formula.
 Function GetFirstNumber(Rng As Range)
     Dim i As Long, pos As Long

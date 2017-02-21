@@ -1,4 +1,4 @@
-Attribute VB_Name = "ListBeads"
+Attribute VB_Name = "MListBeads"
 ' gets and sorts the added bead for each machine
 ' Depends on CInkSheet and CResult
 

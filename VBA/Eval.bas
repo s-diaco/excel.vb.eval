@@ -11,16 +11,16 @@ Function Eval(ByVal Rng As Range)
     Dim StartPt As Long
     Dim TimeNumber As Single
     Dim HourDigits As Integer
-    Dim I As Integer
+    Dim i As Integer
     Dim j As Integer
     Dim sum As Single
         
     sum = 0
     
 ' On Error GoTo BuildResult
-    For I = 1 To Rng.Rows.Count
+    For i = 1 To Rng.Rows.Count
         For j = 1 To Rng.Columns.Count
-            strSearch = Rng.Cells(I, j).Value
+            strSearch = Rng.Cells(i, j).Value
                        
 FindTime:
             If strSearch Like "*#:##*" Then
@@ -48,7 +48,7 @@ FindTime:
             sum = sum + Evaluate(strSearch)
             End If
         Next j
-    Next I
+    Next i
     
 Eval = sum
 End Function

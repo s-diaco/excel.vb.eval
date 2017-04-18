@@ -15,6 +15,7 @@ Dim vCriteriaCol As String
 Dim vLastRow As Long
 Dim vSerialCol As String
 Dim vRotTimeCol As String
+Dim vFileNameCol As String
 
 Public Property Get BeadsCol() As String
     BeadsCol = vBeadsCol
@@ -81,4 +82,11 @@ Public Property Let RotTimeCol(rt As String)
     vRotTimeCol = rt
 End Property
 
+Public Property Get FileNameCol() As String
+    FileNameCol = vFileNameCol
+End Property
+
+Public Property Let FileNameCol(fn As String)
+    vFileNameCol = fn
+End Property
 

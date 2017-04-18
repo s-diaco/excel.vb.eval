@@ -10,6 +10,7 @@ Function ListBeads(ByVal SheetNames As Range, _
                     ByVal Criterion As Range, _
                     ByVal SerialColumn As Range, _
                     ByVal RetValueColumn As Range)
+         ' Application.Volatile
          ListBeads = "-"
          Dim AddedRows As Collection
          Set AddedRows = New Collection
@@ -96,6 +97,7 @@ Function ListBeads(ByVal SheetNames As Range, _
 End Function
 
 Function RotTimes(sDate As String, eDate As String, _
+                    ByVal FileName As Range, _
                     ByVal SheetNames As Range, _
                     ByVal DateColumn As Range, _
                     ByVal FilterColumn As Range, _
@@ -126,17 +128,51 @@ Function RotTimes(sDate As String, eDate As String, _
             InkSheet(InkSheetIndex).CriteriaCol = FilterColumn.Cells(InkSheetIndex, 1)
             InkSheet(InkSheetIndex).SerialCol = SerialColumn.Cells(InkSheetIndex, 1)
             InkSheet(InkSheetIndex).RotTimeCol = RotTimeColumn.Cells(InkSheetIndex, 1)
+            InkSheet(InkSheetIndex).FileNameCol = FileName.Cells(InkSheetIndex, 1)
             InkSheet(InkSheetIndex).SheetName = InkSheetCell.Value
-            With Worksheets(InkSheet(InkSheetIndex).SheetName)
-                InkSheet(InkSheetIndex).LastRow = .Cells(.Rows.Count, InkSheet(InkSheetIndex).SerialCol).End(xlUp).Row
-                For i = 1 To InkSheet(InkSheetIndex).LastRow
-                    If Not IsLaterThan(sDate, .Cells(i, InkSheet(InkSheetIndex).DateCol).Value, ".") _
-                        And .Cells(i, InkSheet(InkSheetIndex).CriteriaCol).Value = Criterion.Cells(1, 1).Value _
-                        And (Not IsNumeric(Left(eDate, 2)) Or IsLaterThan(eDate, .Cells(i, InkSheet(InkSheetIndex).DateCol).Value, ".")) Then
-                        sum = sum + Eval(Worksheets(InkSheet(InkSheetIndex).SheetName).Cells(i, InkSheet(InkSheetIndex).RotTimeCol))
-                    End If
-                Next i
-            End With
+            
+            Dim ws As Worksheet
+            If InkSheet(InkSheetIndex).FileNameCol = "" Then
+                Set ws = Worksheets(InkSheet(InkSheetIndex).SheetName)
+            Else
+                
+                
+                Dim app As New Excel.Application
+app.Visible = False 'Visible is False by default, so this isn't necessary
+Dim book As Excel.Workbook
+Set book = app.Workbooks.Add("E:\Users\lab4\Cloud\excel\production\1-pre milling.xlsx")
+'
+' Do what you have to do
+'
+book.Close SaveChanges:=False
+app.Quit
+Set app = Nothing
+
+
+                Dim testFileName As String
+                testFileName = "E:\Users\lab4\Cloud\excel\production\" & InkSheet(InkSheetIndex).FileNameCol
+                Dim wb As Workbook
+                Set wb = Workbooks.Open("E:\Users\lab4\Cloud\excel\production\" & InkSheet(InkSheetIndex).FileNameCol, True, True)
+                Set ws = wb.Worksheets(InkSheet(InkSheetIndex).SheetName)
+            End If
+                Dim st As String
+                ' st = "Copying data from " & strSourceWB & "..." & CStr(wb.Worksheets.Count)
+                ' Application.StatusBar = st
+                With ws
+                    InkSheet(InkSheetIndex).LastRow = .Cells(.Rows.Count, InkSheet(InkSheetIndex).SerialCol).End(xlUp).Row
+                    For i = 1 To InkSheet(InkSheetIndex).LastRow
+                        If Not IsLaterThan(sDate, .Cells(i, InkSheet(InkSheetIndex).DateCol).Value, ".") _
+                            And .Cells(i, InkSheet(InkSheetIndex).CriteriaCol).Value = Criterion.Cells(1, 1).Value _
+                            And (Not IsNumeric(Left(eDate, 2)) Or IsLaterThan(eDate, .Cells(i, InkSheet(InkSheetIndex).DateCol).Value, ".")) Then
+                            sum = sum + Eval(Worksheets(InkSheet(InkSheetIndex).SheetName).Cells(i, InkSheet(InkSheetIndex).RotTimeCol))
+                        End If
+                    Next i
+                End With
+            If Not (InkSheet(InkSheetIndex).FileNameCol = "") Then
+                wb.Close False ' close the source workbook without saving any changes
+                Set wb = Nothing ' free memory
+                Application.ScreenUpdating = True ' turn on the screen updating
+            End If
             InkSheetIndex = InkSheetIndex + 1
          Next
     RotTimes = sum

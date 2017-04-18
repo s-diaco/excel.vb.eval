@@ -1,21 +1,20 @@
-Attribute VB_Name = "MEval"
+Attribute VB_Name = "MTotalTimeString"
 '
-' Purpose   : Turns a string formula into a “real” formula and evaluates it.
-' Comment   : [Rng] Formula in string format.
+' Purpose   : multiplies a string of times by a specified factor.
+' Comment   : [Rng] Formula in string format. this function is copied from Eval
 '
-Function Eval(ByVal Rng As Range)
+Function TotalTimeString(ByVal Rng As Range, ByVal Factor As Single)
 
 ' Application.Volatile
 
     Dim strSearch As String
+    Dim strResult As String
     Dim StartPt As Long
     Dim TimeNumber As Single
     Dim HourDigits As Integer
     Dim i As Integer
     Dim j As Integer
-    Dim sum As Single
-        
-    sum = 0
+    strResult = ""
     
 ' On Error GoTo BuildResult
     For i = 1 To Rng.Rows.Count
@@ -35,22 +34,28 @@ FindTime:
                 End If
                 StartPt = WorksheetFunction.Search(":", strSearch) - HourDigits
                 TimeNumber = TimeValue(Mid(strSearch, StartPt, HourDigits + 3))
-                strSearch = WorksheetFunction.Substitute(strSearch, Mid(strSearch, StartPt, HourDigits + 3), CStr(TimeNumber))
+                strSearch = Right(strSearch, Len(strSearch) - StartPt - 3)
+                strResult = strResult & Application.Text(TimeNumber * Factor, "[h]:mm")
+                If Len(strSearch) > 1 Then
+                    strResult = strResult & Left(strSearch, 1)
+                    strSearch = Right(strSearch, Len(strSearch) - 1)
+                End If
                 GoTo FindTime
             End If
             'check if the cell is not an empty or non-numeric cell.
             If strSearch Like "*#*" Then
-                ' remove any non-numerinc trailing character
-                Do While Not (Right(strSearch, 1) Like "#")
-                    strSearch = Left(strSearch, Len(strSearch) - 1)
-                Loop
-                sum = sum + Evaluate(strSearch)
+            ' remove any non-numerinc trailing character
+            If Not (Right(strSearch, 1) Like "#") Then
+                strSearch = Left(strSearch, Len(strSearch) - 1)
+            End If
+            
             End If
         Next j
     Next i
     
-Eval = sum
+TotalTimeString = strResult
 End Function
+
 
 
 

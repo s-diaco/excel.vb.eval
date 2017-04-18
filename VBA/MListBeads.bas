@@ -11,10 +11,14 @@ Function ListBeads(ByVal SheetNames As Range, _
                     ByVal SerialColumn As Range, _
                     ByVal RetValueColumn As Range)
          ' Application.Volatile
+                  
          ListBeads = "-"
          Dim AddedRows As Collection
          Set AddedRows = New Collection
          Dim BeadRow As CResult
+         
+         On Error GoTo InvalidValue
+         
          
          ' fill the values.
          Dim InkSheetCell As Range
@@ -34,15 +38,19 @@ Function ListBeads(ByVal SheetNames As Range, _
             InkSheet(InkSheetIndex).CriteriaCol = FilterColumn.Cells(InkSheetIndex, 1)
             InkSheet(InkSheetIndex).SerialCol = SerialColumn.Cells(InkSheetIndex, 1)
             InkSheet(InkSheetIndex).SheetName = InkSheetCell.Value
-            With Worksheets(InkSheet(InkSheetIndex).SheetName)
+            
+            ' get the active Wbk
+            Dim wb As Workbook
+            Set wb = GetWorkbook(SheetNames)
+            
+            With wb.Sheets(InkSheet(InkSheetIndex).SheetName)
                 InkSheet(InkSheetIndex).LastRow = .Cells(.Rows.Count, InkSheet(InkSheetIndex).SerialCol).End(xlUp).Row
                 For i = 1 To InkSheet(InkSheetIndex).LastRow
                     If .Cells(i, InkSheet(InkSheetIndex).BeadsCol).Value <> "" _
                         And .Cells(i, InkSheet(InkSheetIndex).CriteriaCol).Value = Criterion.Cells(1, 1).Value Then
-                        
                         ' Create an BeadRow instance
                         Set BeadRow = New CResult
-                        BeadRow.SortIndex = Worksheets(InkSheet(InkSheetIndex).SheetName).Cells(i, InkSheet(InkSheetIndex).DateCol).Value
+                        BeadRow.SortIndex = wb.Sheets(InkSheet(InkSheetIndex).SheetName).Cells(i, InkSheet(InkSheetIndex).DateCol).Value
                         BeadRow.RowNumber = i
                         BeadRow.SheetName = InkSheet(InkSheetIndex).SheetName
                         AddedRows.Add BeadRow
@@ -51,13 +59,11 @@ Function ListBeads(ByVal SheetNames As Range, _
             End With
             InkSheetIndex = InkSheetIndex + 1
          Next
-         
          If ResultIndex > AddedRows.Count Then
             Exit Function
         End If
          
-         ' Sort AddedRows list
-         ' todo: change the algorithm to mergesort. it's faster.
+         ' Copy collection to array for better sort
          Dim j As Integer
          Dim vTemp As CResult
          Set vTemp = New CResult
@@ -68,6 +74,9 @@ Function ListBeads(ByVal SheetNames As Range, _
             SortedArray(i).SheetName = AddedRows(i).SheetName
             SortedArray(i).RowNumber = AddedRows(i).RowNumber
          Next i
+         
+         ' Sort AddedRows list
+         ' todo: change the algorithm to mergesort. it's faster.
          For i = 1 To AddedRows.Count - 1
             For j = i + 1 To AddedRows.Count
                 If IsLaterThan(SortedArray(i).SortIndex, SortedArray(j).SortIndex, ".") Then
@@ -86,18 +95,48 @@ Function ListBeads(ByVal SheetNames As Range, _
                 End If
             Next j
          Next i
-         
+                 
          ' Return the requested column value
          For i = LBound(InkSheet) To UBound(InkSheet)
             If InkSheet(i).SheetName = SortedArray(ResultIndex).SheetName Then Exit For
          Next i
-         With Worksheets(SortedArray(ResultIndex).SheetName)
+         With wb.Sheets(SortedArray(ResultIndex).SheetName)
             ListBeads = .Cells(SortedArray(ResultIndex).RowNumber, InkSheet(i).RetValCol).Value
          End With
+    Exit Function
+
+InvalidValue:
+    ListBeads = "Error " & Err.Number & ": " & Err.Description
+End Function
+
+Private Function GetWorkbook(myCell As Excel.Range) As Workbook
+    Dim a As Excel.Worksheet
+    Set a = myCell.Parent
+    Set GetWorkbook = a.Parent
+End Function
+
+' Not in use.
+Private Function Find_First(FindString As String, FindRng As Range) As Boolean
+    Find_First = False
+    If Trim(FindString) <> "" Then
+        With FindRng
+            Set Rng = .Find(What:=FindString, _
+                            After:=.Cells(.Cells.Count), _
+                            LookIn:=xlValues, _
+                            LookAt:=xlWhole, _
+                            SearchOrder:=xlByRows, _
+                            SearchDirection:=xlNext, _
+                            MatchCase:=False)
+            If Not Rng Is Nothing Then
+                Find_First = True 'value found
+            Else
+                ' MsgBox "Nothing found" 'value not found
+            End If
+        End With
+    End If
 End Function
 
 Function RotTimes(sDate As String, eDate As String, _
-                    ByVal FileName As Range, _
                     ByVal SheetNames As Range, _
                     ByVal DateColumn As Range, _
                     ByVal FilterColumn As Range, _
@@ -121,6 +160,7 @@ Function RotTimes(sDate As String, eDate As String, _
          Dim InkSheet() As New CInkSheet
          ReDim InkSheet(SheetNames.Cells.Count) As New CInkSheet
          n = 1
+         
          For Each InkSheetCell In SheetNames
          
             ' Create an inksheet instance.
@@ -128,51 +168,19 @@ Function RotTimes(sDate As String, eDate As String, _
             InkSheet(InkSheetIndex).CriteriaCol = FilterColumn.Cells(InkSheetIndex, 1)
             InkSheet(InkSheetIndex).SerialCol = SerialColumn.Cells(InkSheetIndex, 1)
             InkSheet(InkSheetIndex).RotTimeCol = RotTimeColumn.Cells(InkSheetIndex, 1)
-            InkSheet(InkSheetIndex).FileNameCol = FileName.Cells(InkSheetIndex, 1)
             InkSheet(InkSheetIndex).SheetName = InkSheetCell.Value
-            
-            Dim ws As Worksheet
-            If InkSheet(InkSheetIndex).FileNameCol = "" Then
-                Set ws = Worksheets(InkSheet(InkSheetIndex).SheetName)
-            Else
-                
-                
-                Dim app As New Excel.Application
-app.Visible = False 'Visible is False by default, so this isn't necessary
-Dim book As Excel.Workbook
-Set book = app.Workbooks.Add("E:\Users\lab4\Cloud\excel\production\1-pre milling.xlsx")
-'
-' Do what you have to do
-'
-book.Close SaveChanges:=False
-app.Quit
-Set app = Nothing
-
-
-                Dim testFileName As String
-                testFileName = "E:\Users\lab4\Cloud\excel\production\" & InkSheet(InkSheetIndex).FileNameCol
-                Dim wb As Workbook
-                Set wb = Workbooks.Open("E:\Users\lab4\Cloud\excel\production\" & InkSheet(InkSheetIndex).FileNameCol, True, True)
-                Set ws = wb.Worksheets(InkSheet(InkSheetIndex).SheetName)
-            End If
-                Dim st As String
-                ' st = "Copying data from " & strSourceWB & "..." & CStr(wb.Worksheets.Count)
-                ' Application.StatusBar = st
-                With ws
-                    InkSheet(InkSheetIndex).LastRow = .Cells(.Rows.Count, InkSheet(InkSheetIndex).SerialCol).End(xlUp).Row
-                    For i = 1 To InkSheet(InkSheetIndex).LastRow
-                        If Not IsLaterThan(sDate, .Cells(i, InkSheet(InkSheetIndex).DateCol).Value, ".") _
-                            And .Cells(i, InkSheet(InkSheetIndex).CriteriaCol).Value = Criterion.Cells(1, 1).Value _
-                            And (Not IsNumeric(Left(eDate, 2)) Or IsLaterThan(eDate, .Cells(i, InkSheet(InkSheetIndex).DateCol).Value, ".")) Then
-                            sum = sum + Eval(Worksheets(InkSheet(InkSheetIndex).SheetName).Cells(i, InkSheet(InkSheetIndex).RotTimeCol))
-                        End If
-                    Next i
-                End With
-            If Not (InkSheet(InkSheetIndex).FileNameCol = "") Then
-                wb.Close False ' close the source workbook without saving any changes
-                Set wb = Nothing ' free memory
-                Application.ScreenUpdating = True ' turn on the screen updating
-            End If
+            Dim wb As Workbook
+            Set wb = GetWorkbook(SheetNames)
+            With wb.Sheets(InkSheet(InkSheetIndex).SheetName)
+                InkSheet(InkSheetIndex).LastRow = .Cells(.Rows.Count, InkSheet(InkSheetIndex).SerialCol).End(xlUp).Row
+                For i = 1 To InkSheet(InkSheetIndex).LastRow
+                    If Not IsLaterThan(sDate, .Cells(i, InkSheet(InkSheetIndex).DateCol).Value, ".") _
+                        And .Cells(i, InkSheet(InkSheetIndex).CriteriaCol).Value = Criterion.Cells(1, 1).Value _
+                        And (Not IsNumeric(Left(eDate, 2)) Or IsLaterThan(eDate, .Cells(i, InkSheet(InkSheetIndex).DateCol).Value, ".")) Then
+                            sum = sum + Eval(.Cells(i, InkSheet(InkSheetIndex).RotTimeCol))
+                    End If
+                Next i
+            End With
             InkSheetIndex = InkSheetIndex + 1
          Next
     RotTimes = sum

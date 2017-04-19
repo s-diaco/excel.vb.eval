@@ -41,6 +41,12 @@ FindTime:
                     strSearch = Right(strSearch, Len(strSearch) - 1)
                 End If
                 GoTo FindTime
+            Else
+                If strSearch Like "*#.#*" Then
+                    ' there is just one time number in the cell
+                    TimeNumber = strSearch
+                    strResult = strResult & Application.Text(TimeNumber * Factor, "[h]:mm")
+                End If
             End If
             'check if the cell is not an empty or non-numeric cell.
             If strSearch Like "*#*" Then
